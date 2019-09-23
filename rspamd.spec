@@ -1,6 +1,6 @@
 Name:             rspamd
 Version:          1.9.4
-Release:          2%{?dist}
+Release:          2.1%{?dist}
 Summary:          Rapid spam filtering system
 License:          ASL 2.0 and LGPLv3 and BSD and MIT and CC0 and zlib
 URL:              https://www.rspamd.com/
@@ -11,19 +11,28 @@ Source3:          rspamd.logrotate
 Source4:          rspamd.sysusers
 Patch0:           rspamd-secure-ssl-ciphers.patch
 
+# technically not true if you opt-out of hyperscan on el7.x86_64
+%if 0%{?rhel} == 7
+ExclusiveArch:    %{arm} aarch64
+%endif
+
 BuildRequires:    cmake
 BuildRequires:    file-devel
 BuildRequires:    gd-devel
 BuildRequires:    glib2-devel
-%ifarch x86_64
+%ifarch x86_64 
+%if 0%{?fedora} || 0%{?rhel} > 7
 BuildRequires:    hyperscan-devel
+%endif
 %endif
 BuildRequires:    jemalloc-devel
 BuildRequires:    libaio-devel
 BuildRequires:    libcurl-devel
 BuildRequires:    libevent-devel
 BuildRequires:    libicu-devel
+%if 0%{?fedora} || 0%{?rhel} > 7
 BuildRequires:    libnsl2-devel
+%endif
 BuildRequires:    libunwind-devel
 %ifarch ppc64 ppc64le
 BuildRequires:    lua-devel
@@ -36,7 +45,9 @@ BuildRequires:    pcre2-devel
 BuildRequires:    perl
 BuildRequires:    perl-Digest-MD5
 BuildRequires:    ragel
+%if 0%{?fedora}
 BuildRequires:    systemd-rpm-macros
+%endif
 BuildRequires:    sqlite-devel
 %{?systemd_requires}
 Requires:         logrotate
@@ -117,8 +128,10 @@ rm -rf freebsd
   -DLIBDIR=%{_libdir}/%{name}/ \
   -DSYSTEMDDIR=%{_unitdir} \
   -DENABLE_GD=ON \
-%ifarch x86_64
+%ifarch x86_64 
+%if 0%{?fedora} || 0%{?rhel} > 7
   -DENABLE_HYPERSCAN=ON \
+%endif
 %endif
   -DENABLE_JEMALLOC=ON \
   -DENABLE_LIBUNWIND=ON \
@@ -158,27 +171,9 @@ install -Dpm 0644 LICENSE.md %{buildroot}%{_docdir}/licenses/LICENSE.md
 %files
 # TODO: Collect licenses from all bundled dependencies
 %license %{_docdir}/licenses/LICENSE.md
-%{_bindir}/rspam{adm,c,d}{,-%{version}}
-%{_bindir}/rspamd_stats
+%{_bindir}/*
 
-%dir %{_datadir}/%{name}
-%{_datadir}/%{name}/effective_tld_names.dat
-
-%dir %{_datadir}/%{name}/{elastic,languages}
-%{_datadir}/%{name}/{elastic,languages}/*.json
-%{_datadir}/%{name}/languages/stop_words
-
-%dir %{_datadir}/%{name}/{lualib,plugins,rules}
-%{_datadir}/%{name}/{lualib,plugins,rules}/*.lua
-
-%dir %{_datadir}/%{name}/lualib/{decisiontree,nn,lua_ffi,lua_scanners,optim,paths,rspamadm,torch}
-%{_datadir}/%{name}/lualib/{decisiontree,nn,lua_ffi,lua_scanners,optim,paths,rspamadm,torch}/*.lua
-
-%dir %{_datadir}/%{name}/rules/regexp
-%{_datadir}/%{name}/rules/regexp/*.lua
-
-%dir %{_datadir}/%{name}/www
-%{_datadir}/%{name}/www/*
+%{_datadir}/%{name}
 
 %dir %{_libdir}/%{name}
 %{_libdir}/%{name}/*
@@ -190,8 +185,12 @@ install -Dpm 0644 LICENSE.md %{buildroot}%{_docdir}/licenses/LICENSE.md
 %dir %{_sysconfdir}/%{name}
 %config(noreplace) %{_sysconfdir}/%{name}/*.conf
 %config(noreplace) %{_sysconfdir}/%{name}/*.inc
-%dir %{_sysconfdir}/%{name}/{local,modules,override,scores}.d
-%config(noreplace) %{_sysconfdir}/%{name}/{modules,scores}.d/*
+%dir %{_sysconfdir}/%{name}/local.d
+%dir %{_sysconfdir}/%{name}/modules.d
+%dir %{_sysconfdir}/%{name}/override.d
+%dir %{_sysconfdir}/%{name}/scores.d
+%config(noreplace) %{_sysconfdir}/%{name}/modules.d/*
+%config(noreplace) %{_sysconfdir}/%{name}/scores.d/*
 %{_unitdir}/%{name}.service
 %{_sysusersdir}/%{name}.conf
 
