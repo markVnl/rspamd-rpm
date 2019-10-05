@@ -1,3 +1,5 @@
+%global rspamd_user _rspamd
+
 Name:             rspamd
 Version:          1.9.4
 Release:          2.1%{?dist}
@@ -6,9 +8,9 @@ License:          ASL 2.0 and LGPLv3 and BSD and MIT and CC0 and zlib
 URL:              https://www.rspamd.com/
 Source0:          https://github.com/vstakhov/%{name}/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz
 Source1:          80-rspamd.preset
-Source2:          rspamd.service
+
 Source3:          rspamd.logrotate
-Source4:          rspamd.sysusers
+
 Patch0:           rspamd-secure-ssl-ciphers.patch
 
 # technically not true if you opt-out of hyperscan on el7.x86_64
@@ -20,8 +22,8 @@ BuildRequires:    cmake
 BuildRequires:    file-devel
 BuildRequires:    gd-devel
 BuildRequires:    glib2-devel
-%ifarch x86_64 
-%if 0%{?fedora} || 0%{?rhel} > 7
+%ifarch x86_64
+%if 0%{?rhel} > 7
 BuildRequires:    hyperscan-devel
 %endif
 %endif
@@ -30,7 +32,7 @@ BuildRequires:    libaio-devel
 BuildRequires:    libcurl-devel
 BuildRequires:    libevent-devel
 BuildRequires:    libicu-devel
-%if 0%{?fedora} || 0%{?rhel} > 7
+%if 0%{?rhel} > 7
 BuildRequires:    libnsl2-devel
 %endif
 BuildRequires:    libunwind-devel
@@ -45,9 +47,6 @@ BuildRequires:    pcre2-devel
 BuildRequires:    perl
 BuildRequires:    perl-Digest-MD5
 BuildRequires:    ragel
-%if 0%{?fedora}
-BuildRequires:    systemd-rpm-macros
-%endif
 BuildRequires:    sqlite-devel
 %{?systemd_requires}
 Requires:         logrotate
@@ -128,8 +127,8 @@ rm -rf freebsd
   -DLIBDIR=%{_libdir}/%{name}/ \
   -DSYSTEMDDIR=%{_unitdir} \
   -DENABLE_GD=ON \
-%ifarch x86_64 
-%if 0%{?fedora} || 0%{?rhel} > 7
+%ifarch x86_64
+%if 0%{?rhel} > 7
   -DENABLE_HYPERSCAN=ON \
 %endif
 %endif
@@ -141,32 +140,38 @@ rm -rf freebsd
 %endif
   -DENABLE_PCRE2=ON \
   -DENABLE_URL_INCLUDE=ON \
-  -DRSPAMD_USER=%{name} \
-  -DRSPAMD_GROUP=%{name}
+  -DRSPAMD_USER=%{rspamd_user} \
+  -DRSPAMD_GROUP=%{rspamd_user} \
+  -DWANT_SYSTEMD_UNITS=ON
 %make_build
 
-%pre
-%sysusers_create_package %{name} %{SOURCE4}
 
 %install
 %{make_install} DESTDIR=%{buildroot} INSTALLDIRS=vendor
 # The tests install some files we don't want so ship
 rm -f %{buildroot}%{_libdir}/debug/usr/bin/rspam*
 install -Ddpm 0755 %{buildroot}%{_sysconfdir}/%{name}/{local,override}.d/
+install -Ddpm 0755 0755 %{buildroot}%{_sharedstatedir}/%{name}
 install -Dpm 0644 %{SOURCE1} %{buildroot}%{_presetdir}/80-rspamd.preset
-install -Dpm 0644 %{SOURCE2} %{buildroot}%{_unitdir}/rspamd.service
 install -Dpm 0644 %{SOURCE3} %{buildroot}%{_sysconfdir}/logrotate.d/rspamd
-install -Dpm 0644 %{SOURCE4} %{buildroot}%{_sysusersdir}/%{name}.conf
 install -Dpm 0644 LICENSE.md %{buildroot}%{_docdir}/licenses/LICENSE.md
 
+
+%pre
+%{_sbindir}/groupadd -r %{rspamd_user} 2>/dev/null || :
+%{_sbindir}/useradd -g %{rspamd_user} -c "Rspamd user" -s /bin/false -r -d %{_sharedstatedir}/%{name} %{rspamd_user} 2>/dev/null || :
+
 %post
-%systemd_post rspamd.service
+#Macro is not used as we want to do this on upgrade
+#%%systemd_post %%{name}.service
+systemctl --no-reload preset %{name}.service >/dev/null 2>&1 || :
+%{__chown} %{rspamd_user}:%{rspamd_user}  %{_localstatedir}/log/%{name}
 
 %preun
-%systemd_preun rspamd.service
+%systemd_preun %{name}.service
 
 %postun
-%systemd_postun_with_restart rspamd.service
+%systemd_postun_with_restart %{name}.service
 
 %files
 # TODO: Collect licenses from all bundled dependencies
@@ -192,9 +197,14 @@ install -Dpm 0644 LICENSE.md %{buildroot}%{_docdir}/licenses/LICENSE.md
 %config(noreplace) %{_sysconfdir}/%{name}/modules.d/*
 %config(noreplace) %{_sysconfdir}/%{name}/scores.d/*
 %{_unitdir}/%{name}.service
-%{_sysusersdir}/%{name}.conf
+%attr(-, %{rspamd_user}, %{rspamd_user}) %dir %{_sharedstatedir}/%{name}
 
 %changelog
+* Sat Oct 05 2019 Mark Verlinde <mark.verlinde@gmail.com> - 1.9.4-2.1
+- switch to LorbusChris/rspamd-rpm repository
+- apdoted for el7 arm and aarch64 build
+- targeted to be functional compatible with upstream releases
+
 * Fri Aug 02 2019 Felix Kaechele <heffer@fedoraproject.org> - 1.9.4-2
 - remove fann BR, deprecated in favor of torch
 - add gd support
@@ -221,19 +231,11 @@ install -Dpm 0644 LICENSE.md %{buildroot}%{_docdir}/licenses/LICENSE.md
 - Disabled install of service unit from upstream repo
 - Manage local and shared state dirs with systemd service unit
 
-* Mon Oct 22 2018 Evan Klitzke <evan@eklitzke.org> - 1.8.1-1
-- Update for 1.8.1 release
-- Build now uses upstream ragel, not ragel-compat
+* Wed Oct 31 2018 Mark Verlinde <mark.verlinde@gmail.com> 1.8.1-1
+- Update to 1.8.1
+- Cleanup specfile
 
-* Fri May 18 2018 patrick@pichon.me - 1.7.4
-- Updated for 1.7.4 release
-- Make hyperscan-devel only for x86_64 architecure for which the package exist
-
-* Sun Mar 25 2018 evan@eklitzke.org - 1.7.1-1
-- Updated for 1.7.1 release
-
-* Wed Feb 21 2018 Christian Glombek <christian.glombek@rwth-aachen.de> - 1.6.6-1
-- RPM packaging for Rspamd in Fedora
-- Add patch to use OpenSSL system profile cipher list
-- Add license information and provides declarations for bundled libraries
-- Forked from https://raw.githubusercontent.com/vstakhov/rspamd/b1717aafa379b007a093f16358acaf4b44fc03e2/centos/rspamd.spec
+* Wed Jul 04 2018 Mark Verlinde <mark.verlinde@gmail.com> 1.7.5-1
+- Update to 1.7.7
+- Aditional buildbequires luajit-devel libicu-devel
+- Sanitized specfile for (centos) el7 build
