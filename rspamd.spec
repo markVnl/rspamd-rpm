@@ -14,9 +14,9 @@ Source3:          rspamd.logrotate
 Patch0:           rspamd-secure-ssl-ciphers.patch
 
 # technically not true if you opt-out of hyperscan on el7.x86_64
-%if 0%{?rhel} == 7
-ExclusiveArch:    %{arm} aarch64
-%endif
+#%%if 0%{?rhel} == 7
+#ExclusiveArch:    %%{arm} aarch64
+#%%endif
 
 BuildRequires:    cmake
 BuildRequires:    file-devel
@@ -129,8 +129,8 @@ rm -rf freebsd
   -DLIBDIR=%{_libdir}/%{name}/ \
   -DSYSTEMDDIR=%{_unitdir} \
   -DENABLE_GD=ON \
-%ifarch x86_64
-%if 0%{?rhel} > 7
+%ifarch x86_64 
+%if 0%{?fedora} || 0%{?rhel} > 7
   -DENABLE_HYPERSCAN=ON \
 %endif
 %endif
@@ -164,10 +164,7 @@ install -Dpm 0644 LICENSE.md %{buildroot}%{_docdir}/licenses/LICENSE.md
 %{_sbindir}/useradd -g %{rspamd_user} -c "Rspamd user" -s /bin/false -r -d %{_sharedstatedir}/%{name} %{rspamd_user} 2>/dev/null || :
 
 %post
-#Macro is not used as we want to do this on upgrade
-#%%systemd_post %%{name}.service
-systemctl --no-reload preset %{name}.service >/dev/null 2>&1 || :
-%{__chown} %{rspamd_user}:%{rspamd_user}  %{_localstatedir}/log/%{name}
+%systemd_post rspamd.service
 
 %preun
 %systemd_preun %{name}.service
