@@ -2,7 +2,7 @@
 
 Name:             rspamd
 Version:          1.9.4
-Release:          2.1%{?dist}
+Release:          2.2%{?dist}
 Summary:          Rapid spam filtering system
 License:          ASL 2.0 and LGPLv3 and BSD and MIT and CC0 and zlib
 URL:              https://www.rspamd.com/
@@ -36,12 +36,14 @@ BuildRequires:    libicu-devel
 BuildRequires:    libnsl2-devel
 %endif
 BuildRequires:    libunwind-devel
-%ifarch ppc64 ppc64le
+%ifarch ppc64 ppc64le aarch64
 BuildRequires:    lua-devel
 %else
 BuildRequires:    luajit-devel
 %endif
+%ifarch %{arm} x86_64
 BuildRequires:    openblas-devel
+%endif
 BuildRequires:    openssl-devel
 BuildRequires:    pcre2-devel
 BuildRequires:    perl
@@ -134,7 +136,7 @@ rm -rf freebsd
 %endif
   -DENABLE_JEMALLOC=ON \
   -DENABLE_LIBUNWIND=ON \
-%ifarch ppc64 ppc64le
+%ifarch ppc64 ppc64le aarch64
   -DENABLE_LUAJIT=OFF \
   -DENABLE_TORCH=OFF \
 %endif
@@ -200,6 +202,9 @@ systemctl --no-reload preset %{name}.service >/dev/null 2>&1 || :
 %attr(-, %{rspamd_user}, %{rspamd_user}) %dir %{_sharedstatedir}/%{name}
 
 %changelog
+* Thu Oct 10 2019 Mark Verlinde <mark.verlinde@gmail.com> - 1.9.4-2.2
+- conservative build for aarch64, fixes random segfaults
+
 * Sat Oct 05 2019 Mark Verlinde <mark.verlinde@gmail.com> - 1.9.4-2.1
 - switch to LorbusChris/rspamd-rpm repository
 - apdoted for el7 arm and aarch64 build
