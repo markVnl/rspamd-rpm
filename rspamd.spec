@@ -2,24 +2,24 @@
 
 Name:             rspamd
 Version:          2.4
-Release:          1%{?dist}
+Release:          1.1%{?dist}
 Summary:          Rapid spam filtering system
 License:          ASL 2.0 and LGPLv3 and BSD and MIT and CC0 and zlib
 URL:              https://www.rspamd.com/
-Source0:          https://github.com/%{name}/%{name}/archive/%{version}.tar.gz#/%{name}-%{version}.tar.gz
+Source0:          https://github.com/%{name}/%{name}/archive/%{version}.tar.gz
 Source1:          80-rspamd.preset
 
 Source3:          rspamd.logrotate
 
-Patch0:           rspamd-secure-ssl-ciphers.patch
+#Patch0:           rspamd-secure-ssl-ciphers.patch
 Patch1:           rspamd-fix-replxx-compile.patch
 
 # technically not true if you opt-out of hyperscan on el7.x86_64
-#%%if 0%{?rhel} == 7
-#ExclusiveArch:    %%{arm} aarch64
-#%%endif
+%if 0%{?rhel} == 7
+ExclusiveArch:    %{arm} aarch64
+%endif
 
-BuildRequires:    cmake
+BuildRequires:    cmake3
 BuildRequires:    file-devel
 BuildRequires:    glib2-devel
 %ifarch x86_64
@@ -33,6 +33,7 @@ BuildRequires:    libcurl-devel
 BuildRequires:    libicu-devel
 %if 0%{?rhel} > 7
 BuildRequires:    libnsl2-devel
+%endif
 BuildRequires:    libsodium-devel
 BuildRequires:    libunwind-devel
 %ifarch ppc64 ppc64le aarch64
@@ -51,6 +52,15 @@ BuildRequires:    ragel
 BuildRequires:    sqlite-devel
 %{?systemd_requires}
 Requires:         logrotate
+%if 0%{?rhel} == 7
+%ifarch x86_64
+BuildRequires:  devtoolset-7-build
+BuildRequires:  devtoolset-7-binutils
+BuildRequires:  devtoolset-7-gcc
+BuildRequires:  devtoolset-7-gcc-c++
+%endif
+%endif
+
 
 # Bundled dependencies
 # TODO: Check for bundled js libs
@@ -123,8 +133,15 @@ rm -rf docker
 rm -rf freebsd
 
 %build
+
+%if 0%{?rhel} == 7
+%ifarch x86_64
+%{?enable_devtoolset7:%{enable_devtoolset7}}
+%endif
+%endif
+
 # NOTE: To disable tests during build, set DEBIAN_BUILD=1 option
-%cmake \
+%cmake3 \
   -DDEBIAN_BUILD=0 \
   -DCONFDIR=%{_sysconfdir}/%{name} \
   -DMANDIR=%{_mandir} \
@@ -145,9 +162,10 @@ rm -rf freebsd
   -DENABLE_LUAJIT=OFF \
 %endif
   -DENABLE_PCRE2=ON \
-  -DWANT_SYSTEMD_UNITS=ON
   -DRSPAMD_GROUP=%{rspamd_user} \
   -DRSPAMD_USER=%{rspamd_user} \
+  -DWANT_SYSTEMD_UNITS=ON
+
 %make_build
 
 
@@ -182,22 +200,6 @@ install -Dpm 0644 LICENSE.md %{buildroot}%{_docdir}/licenses/LICENSE.md
 
 %{_datadir}/%{name}
 
-%dir %{_datadir}/%{name}/{elastic,languages}
-%{_datadir}/%{name}/{elastic,languages}/*.json
-%{_datadir}/%{name}/languages/stop_words
-
-%dir %{_datadir}/%{name}/{lualib,plugins,rules}
-%{_datadir}/%{name}/{lualib,plugins,rules}/*.lua
-
-%dir %{_datadir}/%{name}/lualib/{decisiontree,nn,lua_ffi,lua_scanners,optim,paths,rspamadm,torch}
-%{_datadir}/%{name}/lualib/{decisiontree,nn,lua_ffi,lua_scanners,optim,paths,rspamadm,torch}/*.lua
-
-%dir %{_datadir}/%{name}/rules/regexp
-%{_datadir}/%{name}/rules/regexp/*.lua
-
-%dir %{_datadir}/%{name}/www
-%{_datadir}/%{name}/www/*
-
 %dir %{_libdir}/%{name}
 %{_libdir}/%{name}/*
 %{_presetdir}/80-rspamd.preset
@@ -209,6 +211,7 @@ install -Dpm 0644 LICENSE.md %{buildroot}%{_docdir}/licenses/LICENSE.md
 %dir %{_sysconfdir}/%{name}/maps.d
 %config(noreplace) %{_sysconfdir}/%{name}/*.conf
 %config(noreplace) %{_sysconfdir}/%{name}/*.inc
+%config(noreplace) %{_sysconfdir}/%{name}/maps.d/*.inc
 %dir %{_sysconfdir}/%{name}/local.d
 %dir %{_sysconfdir}/%{name}/modules.d
 %dir %{_sysconfdir}/%{name}/override.d
@@ -219,6 +222,10 @@ install -Dpm 0644 LICENSE.md %{buildroot}%{_docdir}/licenses/LICENSE.md
 %attr(-, %{rspamd_user}, %{rspamd_user}) %dir %{_sharedstatedir}/%{name}
 
 %changelog
+* Sun Mar 08 2020 Mark Verlinde <mark.verlinde@gmail.com> - 2.4-1.1
+- apdoted for el7 arm and aarch64 build
+- dropped ciphers patch
+
 * Fri Mar 06 2020 Julian DeMille <me@jdemille.com> - 2.4-1
 - update to 2.4
 - integrate Felix's changes
