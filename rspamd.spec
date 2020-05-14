@@ -2,7 +2,7 @@
 
 Name:             rspamd
 Version:          2.5
-Release:          1%{?dist}
+Release:          1.1%{?dist}
 Summary:          Rapid spam filtering system
 License:          ASL 2.0 and LGPLv3 and BSD and MIT and CC0 and zlib
 URL:              https://www.rspamd.com/
@@ -11,7 +11,7 @@ Source1:          80-rspamd.preset
 
 Source3:          rspamd.logrotate
 
-#Patch0:           rspamd-secure-ssl-ciphers.patch
+Patch0:           rspamd-secure-ssl-ciphers.patch
 Patch1:           rspamd-fix-replxx-compile.patch
 
 # technically not true if you opt-out of hyperscan on el7.x86_64
@@ -222,12 +222,16 @@ install -Dpm 0644 LICENSE.md %{buildroot}%{_docdir}/licenses/LICENSE.md
 %attr(-, %{rspamd_user}, %{rspamd_user}) %dir %{_sharedstatedir}/%{name}
 
 %changelog
-* Sun Mar 08 2020 Mark Verlinde <mark.verlinde@gmail.com> - 2.4-1.1
-- apdoted for el7 arm and aarch64 build
-- dropped ciphers patch
+* Thu May 14 2020 Mark Verlinde <mark.verlinde@gmail.com> - 2.5-1.1
+- el7 build for arm aarch64
+- (re)included ciphers patch
 
 * Sat Apr 25 2020 Johan Kok <johan@fedoraproject.org> - 2.5-1
 - Update to 2.5
+
+* Sun Mar 08 2020 Mark Verlinde <mark.verlinde@gmail.com> - 2.4-1.1
+- adopted for el7 arm and aarch64 build
+- dropped ciphers patch
 
 * Fri Mar 06 2020 Julian DeMille <me@jdemille.com> - 2.4-1
 - update to 2.4
