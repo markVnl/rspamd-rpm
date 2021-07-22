@@ -1,8 +1,8 @@
 %global rspamd_user _rspamd
 
 Name:             rspamd
-Version:          2.5
-Release:          1.1%{?dist}
+Version:          2.7
+Release:          1%{?dist}
 Summary:          Rapid spam filtering system
 License:          ASL 2.0 and LGPLv3 and BSD and MIT and CC0 and zlib
 URL:              https://www.rspamd.com/
@@ -12,7 +12,6 @@ Source1:          80-rspamd.preset
 Source3:          rspamd.logrotate
 
 Patch0:           rspamd-secure-ssl-ciphers.patch
-Patch1:           rspamd-fix-replxx-compile.patch
 
 # technically not true if you opt-out of hyperscan on el7.x86_64
 %if 0%{?rhel} == 7
@@ -71,6 +70,9 @@ BuildRequires:  devtoolset-7-gcc-c++
 Provides: bundled(aho-corasick)
 # cdb: Public Domain
 Provides: bundled(cdb) = 1.1.0
+# google-ced: Apache License v2
+# ced = "Compact Encoding Detection", https://github.com/google/compact_enc_det
+Provides: bundled(compact_enc_det) = 37529e6
 # fastutf8: MIT
 Provides: bundled(fastutf8)
 # hiredis: BSD-3-Clause
@@ -80,7 +82,7 @@ Provides: bundled(kann)
 # lc-btrie: BSD-3-Clause
 Provides: bundled(lc-btrie)
 # libev: BSD-2-Clause
-Provides: bundled(libev)
+Provides: bundled(libev) = 4.33
 # libottery: CC0
 Provides: bundled(libottery)
 # librdns: BSD-2-Clause
@@ -88,9 +90,9 @@ Provides: bundled(librdns)
 # libucl: BSD-2-Clause
 Provides: bundled(libucl)
 # lua-argparse: MIT
-Provides: bundled(lua-argparse)
+Provides: bundled(lua-argparse) = 0.7.0
 # lua-bit: MIT
-Provides: bundled(lua-bit)
+Provides: bundled(lua-bit) = 1.0.2
 # lua-fun: MIT
 Provides: bundled(lua-fun)
 # lua-lpeg: MIT
@@ -108,7 +110,7 @@ Provides: bundled(ngx-http-parser) = 2.2.0
 # perl-Mozilla-PublicSuffix: MIT
 Provides: bundled(perl-Mozilla-PublicSuffix)
 # replxx: BSD-3-Clause
-Provides: bundled(replxx)
+Provides: bundled(replxx) = 0.0.2
 # snowball: BSD-3-Clause
 Provides: bundled(snowball)
 # t1ha: Zlib
@@ -118,7 +120,7 @@ Provides: bundled(uthash) = 1.9.8
 # xxhash: BSD
 Provides: bundled(xxhash)
 # zstd: BSD
-Provides: bundled(zstd) = 1.3.1
+Provides: bundled(zstd) = 1.4.5
 
 %description
 Rspamd is a rapid, modular and lightweight spam filter. It is designed to work
@@ -222,6 +224,12 @@ install -Dpm 0644 LICENSE.md %{buildroot}%{_docdir}/licenses/LICENSE.md
 %attr(-, %{rspamd_user}, %{rspamd_user}) %dir %{_sharedstatedir}/%{name}
 
 %changelog
+* Fri Jan 08 2021 Johan Kok <johan@fedoraproject.org> - 2.7-1
+- Update to 2.7
+- Updated cmake rpm macros
+- Updated ssl ciphers patch
+- Removed replxx compile patch
+
 * Thu May 14 2020 Mark Verlinde <mark.verlinde@gmail.com> - 2.5-1.1
 - el7 build for arm aarch64
 - (re)included ciphers patch
