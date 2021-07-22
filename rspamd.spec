@@ -2,7 +2,7 @@
 
 Name:             rspamd
 Version:          2.7
-Release:          1%{?dist}
+Release:          1.1%{?dist}
 Summary:          Rapid spam filtering system
 License:          ASL 2.0 and LGPLv3 and BSD and MIT and CC0 and zlib
 URL:              https://www.rspamd.com/
@@ -224,6 +224,9 @@ install -Dpm 0644 LICENSE.md %{buildroot}%{_docdir}/licenses/LICENSE.md
 %attr(-, %{rspamd_user}, %{rspamd_user}) %dir %{_sharedstatedir}/%{name}
 
 %changelog
+* Thu Jul 22 2021 Mark Verlinde <mark.verlinde@gmail.com> - 2.7-1.1
+- el7 build for arm aarch64
+
 * Fri Jan 08 2021 Johan Kok <johan@fedoraproject.org> - 2.7-1
 - Update to 2.7
 - Updated cmake rpm macros
